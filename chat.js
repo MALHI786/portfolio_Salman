@@ -6,22 +6,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputField = document.getElementById('chat-input');
   const messagesContainer = document.getElementById('chat-messages');
 
-  // URL of your n8n Webhook
-  const N8N_WEBHOOK_URL = 'https://mypcjnaab123.app.n8n.cloud/webhook/portfolio-chat';
+  // LOCAL n8n webhook (change to ngrok URL for public deployment)
+  const N8N_WEBHOOK_URL = 'http://localhost:5678/webhook/portfolio-chat';
 
-  // Toggle Chat Window
   chatBtn.addEventListener('click', () => {
     chatWindow.classList.toggle('open');
-    if (chatWindow.classList.contains('open')) {
-      inputField.focus();
-    }
+    if (chatWindow.classList.contains('open')) inputField.focus();
   });
 
   closeBtn.addEventListener('click', () => {
     chatWindow.classList.remove('open');
   });
 
-  // Send Message
   sendBtn.addEventListener('click', sendMessage);
   inputField.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') sendMessage();
@@ -31,14 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const text = inputField.value.trim();
     if (!text) return;
 
-    // Add User Message
     addMessage(text, 'user');
     inputField.value = '';
     inputField.disabled = true;
     sendBtn.disabled = true;
 
-    // Add Loading Indicator
-    const loadingId = addMessage('Typing...', 'bot', true);
+    const loadingId = addMessage('Thinking...', 'bot', true);
 
     try {
       const response = await fetch(N8N_WEBHOOK_URL, {
@@ -48,45 +42,21 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       let data = await response.json();
+      if (Array.isArray(data)) data = data[0];
 
-      // n8n often returns an array [ { ... } ], so we take the first item
-      if (Array.isArray(data) && data.length > 0) {
-        data = data[0];
-      }
-
-      // Debug logging
-      console.log('n8n Response:', data);
-
-      // Remove loading
+      console.log('Response:', data);
       removeMessage(loadingId);
 
-      // Parse n8n response - handle multiple possible structures
-      let botReply;
-      if (typeof data === 'string') {
-        botReply = data;
-      } else if (data.answer) {
-        botReply = data.answer;
-      } else if (data.message && data.message.content) {
-        botReply = data.message.content;
-      } else if (data.message) {
-        botReply = typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
-      } else if (data.content) {
-        botReply = data.content;
-      } else if (data.text) {
-        botReply = data.text;
-      } else if (data.output) {
-        botReply = data.output;
-      } else {
-        // Fallback: show the raw JSON so we can debug what's happening
-        botReply = "Debug: " + JSON.stringify(data);
-      }
+      const botReply = data.answer || data.text || data.content ||
+        (data.message && data.message.content) ||
+        (typeof data.message === 'string' ? data.message : null) ||
+        'Debug: ' + JSON.stringify(data);
 
       addMessage(botReply, 'bot');
-
     } catch (error) {
       removeMessage(loadingId);
       console.error('Chat error:', error);
-      addMessage(`Error: ${error.message}`, 'bot');
+      addMessage('Error: ' + error.message, 'bot');
     } finally {
       inputField.disabled = false;
       sendBtn.disabled = false;
@@ -99,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
     div.classList.add('message', sender);
     div.textContent = text;
     if (isLoading) div.id = 'loading-msg';
-
     messagesContainer.appendChild(div);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
     return div.id;
