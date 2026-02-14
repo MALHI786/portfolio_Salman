@@ -8,13 +8,13 @@
         "responseMode": "lastNode",
         "options": {}
       },
-      "id": "84866779-6b95-4cc7-a9a7-81a666ac1111",
-      "name": "Webhook",
+      "id": "c65a086c-9922-434e-9aa4-c8c11e6e8b09",
+      "name": "Webhook1",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
       "position": [
-        -352,
-        96
+        -496,
+        256
       ],
       "webhookId": "ad9c70cb-d39e-448d-a2de-4c0f230cdfe2"
     },
@@ -31,13 +31,13 @@
         },
         "options": {}
       },
-      "id": "00c8881b-d251-47f1-b4d8-794388702a0b",
-      "name": "Knowledge Base",
+      "id": "16f19bde-3e33-47d2-b4b7-64cd0d5d4d3c",
+      "name": "Knowledge Base1",
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        -160,
-        96
+        -304,
+        256
       ]
     },
     {
@@ -46,31 +46,31 @@
         "responseBody": "{\n  \"answer\": \"{{ $json.message.content }}\"\n}",
         "options": {}
       },
-      "id": "40a227d1-e517-41da-a9b6-bdacf372111b",
-      "name": "Respond to Webhook",
+      "id": "4260de37-adf2-4e3c-be0d-59894827c77c",
+      "name": "Respond to Webhook1",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        336,
-        96
+        192,
+        256
       ]
     },
     {
       "parameters": {
         "modelId": {
           "__rl": true,
-          "value": "gpt-4.1-mini",
+          "value": "gpt-4o-mini",
           "mode": "list",
-          "cachedResultName": "GPT-4.1-MINI"
+          "cachedResultName": "GPT-4O-MINI"
         },
         "messages": {
           "values": [
             {
-              "content": "=You are a helpful AI assistant for Muhammad Salman Ashraf's portfolio website. Answer questions ONLY based on the following project data. If the answer is not in the data, politely say you don't have that information.\n\nPROJECT DATA:\n{{ $node[\"Knowledge Base\"].json[\"knowledge_context\"] }}",
+              "content": "=You are a helpful AI assistant for Muhammad Salman Ashraf's portfolio website. Answer questions ONLY based on the following project data. If the answer is not in the data, politely say you don't have that information.\n\nPROJECT DATA:\n{{ $json.knowledge_context }}",
               "role": "system"
             },
             {
-              "content": "={{ $node[\"Webhook\"].json[\"body\"][\"message\"] }}",
+              "content": "={{ $node['Webhook1'].json.body.message }}",
               "role": "user"
             }
           ]
@@ -80,48 +80,48 @@
       "type": "@n8n/n8n-nodes-langchain.openAi",
       "typeVersion": 2.1,
       "position": [
-        32,
-        96
+        -112,
+        256
       ],
-      "id": "9fe186a2-9568-4b66-832b-1c782fc467d1",
-      "name": "Message a model",
+      "id": "4542e76c-6ea0-40d5-8c9e-0a0adf676569",
+      "name": "Message a model1",
       "credentials": {
         "openAiApi": {
-          "id": "SgVJFgIGtf1pNsHt",
-          "name": "n8n free OpenAI API credits"
+          "id": "XoiTnE1IiONHtKIH",
+          "name": "OpenAi account"
         }
       }
     }
   ],
   "pinData": {},
   "connections": {
-    "Webhook": {
+    "Webhook1": {
       "main": [
         [
           {
-            "node": "Knowledge Base",
+            "node": "Knowledge Base1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Knowledge Base": {
+    "Knowledge Base1": {
       "main": [
         [
           {
-            "node": "Message a model",
+            "node": "Message a model1",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Message a model": {
+    "Message a model1": {
       "main": [
         [
           {
-            "node": "Respond to Webhook",
+            "node": "Respond to Webhook1",
             "type": "main",
             "index": 0
           }
@@ -129,13 +129,13 @@
       ]
     }
   },
-  "active": false,
+  "active": true,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
     "availableInMCP": false
   },
-  "versionId": "acf9cf6c-d9e8-411f-a954-158eb7850e21",
+  "versionId": "2da8355a-9048-418e-83d2-bf4b62cc2ea8",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "27c39e89051cd9d55fe4103dec3ba8b8b704310579d5007b90dae1ec5601f46e"
