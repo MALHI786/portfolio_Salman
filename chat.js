@@ -47,7 +47,12 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ message: text })
       });
 
-      const data = await response.json();
+      let data = await response.json();
+
+      // n8n often returns an array [ { ... } ], so we take the first item
+      if (Array.isArray(data) && data.length > 0) {
+        data = data[0];
+      }
 
       // Debug logging
       console.log('n8n Response:', data);
@@ -60,19 +65,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof data === 'string') {
         botReply = data;
       } else if (data.answer) {
-        // Our configured response format
         botReply = data.answer;
       } else if (data.message && data.message.content) {
-        // Nested message structure
         botReply = data.message.content;
       } else if (data.message) {
         botReply = typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
       } else if (data.content) {
         botReply = data.content;
+      } else if (data.text) {
+        botReply = data.text;
+      } else if (data.output) {
+        botReply = data.output;
       } else {
-        // Fallback: show the whole object
-        botReply = "I received a response but couldn't parse it. Check console for details.";
-        console.error('Unparsed response:', data);
+        // Fallback: show the raw JSON so we can debug what's happening
+        botReply = "Debug: " + JSON.stringify(data);
       }
 
       addMessage(botReply, 'bot');
