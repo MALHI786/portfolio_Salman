@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputField = document.getElementById('chat-input');
   const messagesContainer = document.getElementById('chat-messages');
 
-  // URL of your n8n Webhook - REPLACE THIS with your actual Production URL
+  // URL of your n8n Webhook
   const N8N_WEBHOOK_URL = 'https://mypcjnaab123.app.n8n.cloud/webhook/portfolio-chat';
 
   // Toggle Chat Window
@@ -41,10 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingId = addMessage('Typing...', 'bot', true);
 
     try {
-      if (N8N_WEBHOOK_URL.includes('YOUR_N8N_WEBHOOK_URL_HERE')) {
-        throw new Error('Please configure the Webhook URL in chat.js');
-      }
-
       const response = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,16 +49,38 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const data = await response.json();
 
-      // Remove loading and add Bot Message
+      // Debug logging
+      console.log('n8n Response:', data);
+
+      // Remove loading
       removeMessage(loadingId);
 
-      // Handle response structure (adjust based on your n8n output)
-      const botReply = data.answer || data.text || data.output || "I didn't get a proper response.";
+      // Parse n8n response - handle multiple possible structures
+      let botReply;
+      if (typeof data === 'string') {
+        botReply = data;
+      } else if (data.answer) {
+        // Our configured response format
+        botReply = data.answer;
+      } else if (data.message && data.message.content) {
+        // Nested message structure
+        botReply = data.message.content;
+      } else if (data.message) {
+        botReply = typeof data.message === 'string' ? data.message : JSON.stringify(data.message);
+      } else if (data.content) {
+        botReply = data.content;
+      } else {
+        // Fallback: show the whole object
+        botReply = "I received a response but couldn't parse it. Check console for details.";
+        console.error('Unparsed response:', data);
+      }
+
       addMessage(botReply, 'bot');
 
     } catch (error) {
       removeMessage(loadingId);
-      addMessage(`Error: ${error.message}. Make sure n8n is active and URL is set.`, 'bot');
+      console.error('Chat error:', error);
+      addMessage(`Error: ${error.message}`, 'bot');
     } finally {
       inputField.disabled = false;
       sendBtn.disabled = false;
