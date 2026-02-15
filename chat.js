@@ -63,7 +63,19 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (error) {
       removeMessage(loadingId);
       console.error('Chat error:', error);
-      addMessage('Error: ' + error.message, 'bot');
+      
+      // Check if it's a network/connection error (server offline)
+      const isOffline = error.name === 'TypeError' || 
+                       error.message.includes('Failed to fetch') ||
+                       error.message.includes('NetworkError') ||
+                       error.message.includes('network') ||
+                       !navigator.onLine;
+      
+      if (isOffline) {
+        addMessage('🔴 SALMAN is not online right now. Please try again later or contact via email: salmanmalhig@gmail.com', 'bot');
+      } else {
+        addMessage('Sorry, I encountered an issue. Please try again or reach out directly.', 'bot');
+      }
     } finally {
       inputField.disabled = false;
       sendBtn.disabled = false;
