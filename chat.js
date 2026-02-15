@@ -6,8 +6,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const inputField = document.getElementById('chat-input');
   const messagesContainer = document.getElementById('chat-messages');
 
-  // LOCAL n8n webhook (change to ngrok URL for public deployment)
-  const N8N_WEBHOOK_URL = 'http://localhost:5678/webhook/portfolio-chat';
+  // Production n8n webhook via ngrok
+  const N8N_WEBHOOK_URL = 'https://applicable-lynelle-lovelessly.ngrok-free.dev/webhook/portfolio-chat';
 
   chatBtn.addEventListener('click', () => {
     chatWindow.classList.toggle('open');
@@ -37,9 +37,16 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const response = await fetch(N8N_WEBHOOK_URL, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
         body: JSON.stringify({ message: text })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
 
       let data = await response.json();
       if (Array.isArray(data)) data = data[0];
