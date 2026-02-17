@@ -108,10 +108,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  function formatMarkdown(text) {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Bold
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')              // Italic
+      .replace(/`([^`]+)`/g, '<code>$1</code>')          // Inline code
+      .replace(/^### (.*$)/gm, '<h3>$1</h3>')           // H3 headings
+      .replace(/^## (.*$)/gm, '<h2>$1</h2>')            // H2 headings
+      .replace(/^# (.*$)/gm, '<h1>$1</h1>')             // H1 headings
+      .replace(/^- (.*$)/gm, '<li>$1</li>')             // List items
+      .replace(/\n([0-9]+\. )(.*$)/gm, '<li>$2</li>')   // Numbered lists
+      .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')        // Wrap lists
+      .replace(/\n\n/g, '</p><p>')                       // Paragraphs
+      .replace(/\n/g, '<br>');                          // Line breaks
+  }
+
   function addMessage(text, sender, isLoading = false) {
     const div = document.createElement('div');
     div.classList.add('message', sender);
-    div.textContent = text;
+    
+    if (sender === 'bot' && !isLoading) {
+      div.innerHTML = '<p>' + formatMarkdown(text) + '</p>';
+    } else {
+      div.textContent = text;
+    }
+    
     if (isLoading) div.id = 'loading-msg';
     messagesContainer.appendChild(div);
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
