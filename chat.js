@@ -54,10 +54,29 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('Response:', data);
       removeMessage(loadingId);
 
-      const botReply = data.answer || data.text || data.content ||
-        (data.message && data.message.content) ||
-        (typeof data.message === 'string' ? data.message : null) ||
-        'Debug: ' + JSON.stringify(data);
+      // Extract clean answer from various response formats
+      let botReply = '';
+
+      // n8n Respond to Webhook format: { answer: "..." }
+      if (data.answer) {
+        botReply = data.answer;
+      }
+      // OpenAI / LongCat format: { choices: [{ message: { content: "..." } }] }
+      else if (data.choices && data.choices.length > 0 && data.choices[0].message) {
+        botReply = data.choices[0].message.content;
+      }
+      // Other formats
+      else if (data.text) {
+        botReply = data.text;
+      } else if (data.content) {
+        botReply = data.content;
+      } else if (data.message && typeof data.message === 'object' && data.message.content) {
+        botReply = data.message.content;
+      } else if (typeof data.message === 'string') {
+        botReply = data.message;
+      } else {
+        botReply = 'Sorry, I could not process the response. Please try again.';
+      }
 
       addMessage(botReply, 'bot');
     } catch (error) {
