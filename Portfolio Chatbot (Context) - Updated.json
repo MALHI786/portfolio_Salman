@@ -1,0 +1,145 @@
+{
+  "name": "Portfolio Chatbot (Context)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "portfolio-chat",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "a66f1c58-1e53-4063-aa43-9199d960fd99",
+      "name": "Webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        336
+      ],
+      "webhookId": "ad9c70cb-d39e-448d-a2de-4c0f230cdfe2"
+    },
+    {
+      "parameters": {
+        "keepOnlySet": true,
+        "values": {
+          "string": [
+            {
+              "name": "system_prompt",
+              "value": "=You are SALMAN's AI portfolio assistant. You help visitors learn about Salman Malhi's projects and skills.\n\nABOUT SALMAN:\n- Full Stack Developer & AI/ML Engineer\n- Email: salmanmalhig@gmail.com\n- GitHub: github.com/MALHI786\n- Instagram: @m_salman_malhi\n- WhatsApp: +92 342 5844921\n\nKEY PROJECTS:\n1. AI Video to Fluent Text - Multi-modal AI system using Whisper for speech-to-text conversion\n2. Attendy - Smart attendance management system built with Flutter & Firebase\n3. Order System - Next.js e-commerce catalog for MANI SPORTS SHAHKOT\n4. Portfolio Manager - Automated portfolio management with auto-deployment to Vercel\n5. RAG Chatbot with DeepSeek - PDF document chatbot using DeepSeek R1 AI models\n6. Rewarded App - Platform with marketplace and 70/30 CPA reward system\n7. Shahkot App - Comprehensive city app for Shahkot, Pakistan\n\nTECH STACK:\n- Mobile: Flutter, React Native, Expo\n- Frontend: React, Next.js, TypeScript, Tailwind CSS\n- Backend: Node.js, Express, NestJS, FastAPI\n- Database: PostgreSQL, Firebase, SQLite, Prisma ORM\n- AI/ML: OpenAI Whisper, DeepSeek, Ollama, LangChain, FAISS\n- Cloud: Vercel, Firebase, Cloudinary\n\nBe helpful, friendly, and informative. If asked about Salman's work, provide specific details from the projects listed above."
+            },
+            {
+              "name": "user_message",
+              "value": "={{ $node['Webhook1'].json.body.message }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7dd82e2e-68b9-4e93-bcd2-462cbd8b47e4",
+      "name": "Prepare Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.longcat.chat/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer ak_2qZ3RU9IE1rz41t4X563A5ay2Qt1p"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"LongCat-Flash-Chat\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": {{ $json.system_prompt | quote }}\n    },\n    {\n      \"role\": \"user\",\n      \"content\": {{ $json.user_message | quote }}\n    }\n  ],\n  \"max_tokens\": 1000,\n  \"temperature\": 0.7\n}",
+        "options": {}
+      },
+      "id": "8f5d3c2a-1b4e-4f6c-9a2d-3e7f8a9b0c1d",
+      "name": "Call LongCat API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        32,
+        336
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"answer\": {{ $json.choices[0].message.content | quote }}\n}",
+        "options": {}
+      },
+      "id": "6157c04d-4066-4ce4-a808-3a4f0fac9c04",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        336,
+        336
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Context": {
+      "main": [
+        [
+          {
+            "node": "Call LongCat API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call LongCat API": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "updated-for-longcat-api",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "27c39e89051cd9d55fe4103dec3ba8b8b704310579d5007b90dae1ec5601f46e"
+  },
+  "id": "9GKioXs3bFvelB5N8YBcB",
+  "tags": []
+}
