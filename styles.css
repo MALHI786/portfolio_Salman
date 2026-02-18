@@ -69,6 +69,8 @@ main {
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 80px;
+  /* Ensure vertical scroll is never blocked by event listeners */
+  touch-action: pan-y;
 }
 
 body {
@@ -213,6 +215,8 @@ p {
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  touch-action: manipulation; /* instant tap, no 300ms delay */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .nav a::before {
@@ -378,6 +382,8 @@ p {
   position: relative;
   overflow: hidden;
   z-index: 1;
+  touch-action: manipulation; /* Remove 300ms tap delay on mobile */
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn-primary {
@@ -432,6 +438,8 @@ p {
   box-shadow: var(--neon-glow);
   position: relative;
   animation: float 6s ease-in-out infinite;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 @keyframes float {
@@ -760,6 +768,7 @@ p {
   margin-bottom: 1.5rem;
   display: block;
   animation: pulse 2s ease-in-out infinite;
+  will-change: transform;
 }
 
 @keyframes pulse {
@@ -936,6 +945,31 @@ p {
   }
 }
 
+/* ========== TOUCH ACTIVE STATES (mobile tap feedback replaces hover) ========== */
+@media (hover: none), (pointer: coarse) {
+  .skill-card:active {
+    border-color: rgba(0, 243, 255, 0.4);
+    background: rgba(25, 25, 40, 0.98) !important;
+  }
+
+  .project-card:active {
+    border-color: rgba(0, 243, 255, 0.4);
+    background: rgba(25, 25, 40, 0.98) !important;
+  }
+
+  .contact-card:active {
+    border-color: rgba(0, 243, 255, 0.4);
+    background: rgba(25, 25, 40, 0.98) !important;
+  }
+
+  .btn-primary:active,
+  .btn-outline:active,
+  .btn-secondary:active {
+    opacity: 0.8;
+    transform: scale(0.97);
+  }
+}
+
 /* ========== ANIMATIONS ========== */
 @keyframes slideInUp {
   from {
@@ -1030,4 +1064,139 @@ p {
   background-size: 50px 50px;
   pointer-events: none;
   z-index: -2;
+  will-change: transform; /* Promote to own layer so it doesn't trigger repaints */
+}
+
+/* ========== MOBILE PERFORMANCE OPTIMIZATIONS ========== */
+/* These media queries strip the most expensive GPU/paint operations
+   that cause lag on mobile. Effects are replaced with lightweight alternatives. */
+
+@media (max-width: 768px) {
+
+  /* --- Disable backdrop-filter (biggest cause of mobile GPU lag) --- */
+  .site-header,
+  .skill-card,
+  .project-card,
+  .contact-card,
+  .education-card,
+  .activities-list li,
+  .nav.mobile-open {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  /* Replace with solid fallback backgrounds */
+  .site-header {
+    background: rgba(8, 8, 12, 0.98) !important;
+  }
+
+  .site-header.scrolled {
+    background: rgba(5, 5, 10, 0.99) !important;
+  }
+
+  .skill-card,
+  .project-card,
+  .contact-card,
+  .education-card,
+  .activities-list li {
+    background: rgba(18, 18, 28, 0.98) !important;
+  }
+
+  .nav.mobile-open {
+    background: rgba(8, 8, 12, 0.99) !important;
+  }
+
+  /* --- Disable expensive blur filters --- */
+  .hero::before {
+    filter: none !important;
+    opacity: 0.4;
+  }
+
+  /* --- Disable grid pattern on mobile (constant fixed bg repaint) --- */
+  .grid-pattern {
+    display: none;
+  }
+
+  /* --- Simplify body background (multiple radial-gradients are expensive) --- */
+  body {
+    background-image: none;
+    background-color: var(--dark-bg);
+  }
+
+  /* --- Remove layered overlay pseudo-element --- */
+  body::before {
+    display: none;
+  }
+
+  /* --- Reduce float animation distance on mobile for smoother 60fps --- */
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-8px); }
+  }
+
+  /* --- Disable glow animation (text-shadow changes force full repaints, can't be GPU-composited) --- */
+  .hero-content .name {
+    animation: none;
+    text-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+  }
+
+  /* --- Disable pulse animation on mobile contact icons --- */
+  .contact-icon {
+    animation: none;
+    transform: none;
+  }
+
+  /* --- Remove blur glow behind profile photo --- */
+  .profile-photo::before {
+    display: none;
+  }
+
+  /* --- Disable hover transforms on touch (touch devices don't hover anyway) --- */
+  .skill-card:hover,
+  .project-card:hover,
+  .contact-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .activities-list li:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* --- Contain paint/layout per card to reduce reflow scope --- */
+  .skill-card,
+  .project-card,
+  .contact-card,
+  .education-card {
+    contain: layout style;
+  }
+
+  /* --- Disable section slideInUp (JS IntersectionObserver handles it instead) --- */
+  .section > * {
+    animation: none;
+  }
+
+  /* --- Reduce transition cost on cards --- */
+  .skill-card,
+  .project-card,
+  .contact-card {
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  }
+}
+
+/* ========== RESPECT REDUCED MOTION PREFERENCE ========== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
 }

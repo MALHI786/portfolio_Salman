@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
       } else {
         header.classList.remove('scrolled');
       }
-    });
+    }, { passive: true }); // passive: true = never blocks scroll on mobile
     
     console.log('✨ Neon effects initialized');
   }
@@ -150,15 +150,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
   
-  // ========== SCROLL ANIMATIONS ==========
+  // ========== SCROLL ANIMATIONS (IntersectionObserver — zero scroll cost) ==========
   function animateOnScroll() {
+    // Legacy fallback — kept for initial paint pass, real work done by observer below
     const elements = document.querySelectorAll('.skill-card, .project-card, .contact-card, .education-card');
     const windowHeight = window.innerHeight;
     const triggerPoint = windowHeight * 0.85;
-    
+
     elements.forEach(element => {
       const elementTop = element.getBoundingClientRect().top;
-      
+
       if (elementTop < triggerPoint) {
         element.style.opacity = '1';
         element.style.transform = 'translateY(0)';
@@ -166,39 +167,68 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+
+  // ========== INTERSECTION OBSERVER (replaces scroll-loop getBoundingClientRect) ==========
+  function initScrollObserver() {
+    if (!('IntersectionObserver' in window)) {
+      // Fallback: show all immediately in old browsers
+      document.querySelectorAll('.skill-card, .project-card, .contact-card, .education-card')
+        .forEach(el => { el.style.opacity = '1'; el.style.transform = 'translateY(0)'; });
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.opacity = '1';
+          entry.target.style.transform = 'translateY(0)';
+          entry.target.classList.add('animated');
+          observer.unobserve(entry.target); // Only animate once
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.skill-card, .project-card, .contact-card, .education-card')
+      .forEach(el => observer.observe(el));
+  }
   
   // ========== HOVER EFFECTS ENHANCEMENT ==========
+  // Skip all mouse-hover effects on touch/mobile devices to avoid jank
+  const isTouchDevice = () => window.matchMedia('(hover: none), (pointer: coarse)').matches;
+
   function initHoverEffects() {
+    if (isTouchDevice()) return; // Touch devices get CSS :active instead
+
     // Project cards glow effect
     projectCards.forEach(card => {
       card.addEventListener('mouseenter', function() {
         this.style.zIndex = '10';
         this.style.boxShadow = '0 0 30px rgba(0, 243, 255, 0.7), 0 0 60px rgba(157, 0, 255, 0.4), 0 0 90px rgba(255, 0, 255, 0.2)';
       });
-      
+
       card.addEventListener('mouseleave', function() {
         this.style.zIndex = '';
         this.style.boxShadow = '';
       });
     });
-    
+
     // Skill cards hover effect
     skillCards.forEach(card => {
       card.addEventListener('mouseenter', function() {
         this.style.transform = 'translateY(-10px) scale(1.02)';
       });
-      
+
       card.addEventListener('mouseleave', function() {
         this.style.transform = 'translateY(0) scale(1)';
       });
     });
-    
+
     // Contact cards hover effect
     contactCards.forEach(card => {
       card.addEventListener('mouseenter', function() {
         this.style.transform = 'translateY(-10px)';
       });
-      
+
       card.addEventListener('mouseleave', function() {
         this.style.transform = 'translateY(0)';
       });
@@ -302,34 +332,44 @@ document.addEventListener('DOMContentLoaded', function() {
   function initializePortfolio() {
     // Initialize neon effects
     initNeonEffects();
-    
+
     // Initialize animations
     initAnimations();
-    
-    // Initialize hover effects
+
+    // Initialize hover effects (desktop only)
     initHoverEffects();
-    
+
+    // Initialize IntersectionObserver for scroll animations
+    initScrollObserver();
+
     // Initialize keyboard navigation
     initKeyboardNavigation();
-    
+
     // Set initial active nav link
     setActiveNavLink();
-    
+
     // Run initial animations
     animateOnScroll();
-    
+
     // Show console art
     showConsoleArt();
-    
+
     console.log('✅ Portfolio fully initialized');
   }
   
   // ========== WINDOW EVENT LISTENERS ==========
-  window.addEventListener('scroll', debounce(function() {
-    setActiveNavLink();
-    animateOnScroll();
-  }));
-  
+  // Use passive:true so the scroll listener never blocks the main thread
+  let rafScheduled = false;
+  window.addEventListener('scroll', function() {
+    if (!rafScheduled) {
+      rafScheduled = true;
+      requestAnimationFrame(function() {
+        setActiveNavLink();
+        rafScheduled = false;
+      });
+    }
+  }, { passive: true });
+
   window.addEventListener('resize', function() {
     // Close mobile menu when resizing to desktop
     if (window.innerWidth > 768 && nav.classList.contains('mobile-open')) {
